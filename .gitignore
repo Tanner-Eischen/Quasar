@@ -5,7 +5,9 @@ __pycache__/
 
 # C extensions
 *.so
-
+node_modules/
+src/node_modules/
+ui/graphql/node_modules/
 # Distribution / packaging
 .Python
 build/
