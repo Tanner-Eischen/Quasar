@@ -1,0 +1,80 @@
+{
+  "queries": [
+    {
+      "id": "q001",
+      "query": "Where is the ground motion prediction equation computed?",
+      "category": "conceptual",
+      "expected_files": ["hazFXnga13l.f"],
+      "expected_symbols": ["HAZFXNGA13L"]
+    },
+    {
+      "id": "q002",
+      "query": "What does subroutine CY201305_NGA do?",
+      "category": "identifier",
+      "expected_files": [],
+      "expected_symbols": ["CY201305_NGA"]
+    },
+    {
+      "id": "q003",
+      "query": "How are ground motion prediction equations called?",
+      "category": "conceptual",
+      "expected_files": [],
+      "expected_symbols": []
+    },
+    {
+      "id": "q004",
+      "query": "What parameters are read from configuration files?",
+      "category": "conceptual",
+      "expected_files": [],
+      "expected_symbols": []
+    },
+    {
+      "id": "q005",
+      "query": "Where are fault rupture models defined?",
+      "category": "conceptual",
+      "expected_files": [],
+      "expected_symbols": []
+    },
+    {
+      "id": "q006",
+      "query": "How is seismic attenuation calculated?",
+      "category": "conceptual",
+      "expected_files": [],
+      "expected_symbols": []
+    },
+    {
+      "id": "q007",
+      "query": "What does the deaggregation routine do?",
+      "category": "conceptual",
+      "expected_files": [],
+      "expected_symbols": []
+    },
+    {
+      "id": "q008",
+      "query": "Where are site response factors applied?",
+      "category": "conceptual",
+      "expected_files": [],
+      "expected_symbols": []
+    },
+    {
+      "id": "q009",
+      "query": "How are GMPE weights determined?",
+      "category": "conceptual",
+      "expected_files": [],
+      "expected_symbols": []
+    },
+    {
+      "id": "q010",
+      "query": "What does the sum_haz program do?",
+      "category": "identifier",
+      "expected_files": [],
+      "expected_symbols": []
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "created": "2026-03-02",
+    "corpus": "USGS NSHMP Fortran (nshm2014r1)",
+    "notes": "Initial 10 queries for Week 1 testing. Will expand to 30+ in Week 3."
+  }
+}

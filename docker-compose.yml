@@ -1,0 +1,54 @@
+version: "3.11"
+
+services:
+  db:
+    image: pgvector/pgvector:pg15
+    container_name: legacylens-db
+    environment:
+      POSTGRES_USER: legacylens
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: legacylens
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legacylens"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: legacylens-api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://legacylens:dev@db:5432/legacylens
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./corpus:/app/corpus:ro
+
+  ui:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ui
+    container_name: legacylens-ui
+    ports:
+      - "8501:8501"
+    environment:
+      API_URL: http://api:8000
+    depends_on:
+      - api
+    volumes:
+      - ./ui:/app/ui
+
+volumes:
+  postgres_data:
