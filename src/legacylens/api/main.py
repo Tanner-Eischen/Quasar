@@ -8,8 +8,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from legacylens.api.routes.files import router as files_router
+from legacylens.api.routes.graph import router as graph_router
 from legacylens.api.routes.health import router as health_router
 from legacylens.api.routes.query import router as query_router
+from legacylens.api.routes.symbols import router as symbols_router
 from legacylens.core.config import get_settings
 from legacylens.db import close_db, init_db
 
@@ -72,6 +74,8 @@ def create_app() -> FastAPI:
     # API v1 endpoints
     app.include_router(query_router, prefix="/api/v1", tags=["query"])
     app.include_router(files_router, prefix="/api/v1", tags=["files"])
+    app.include_router(symbols_router, prefix="/api/v1", tags=["symbols"])
+    app.include_router(graph_router, prefix="/api/v1", tags=["graph"])
 
     return app
 

@@ -16,6 +16,8 @@ from legacylens.db.repository import (
     EmbeddingRepository,
     FileRepository,
     QueryLogRepository,
+    ReferenceRepository,
+    SymbolRepository,
 )
 from legacylens.db.session import (
     close_db,
@@ -41,6 +43,8 @@ __all__ = [
     "EmbeddingRepository",
     "FileRepository",
     "QueryLogRepository",
+    "ReferenceRepository",
+    "SymbolRepository",
     # Session management
     "close_db",
     "get_db_session",

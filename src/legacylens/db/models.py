@@ -166,7 +166,7 @@ class ReferenceModel(Base):
     __tablename__ = "reference"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    from_symbol_id: Mapped[int] = mapped_column(ForeignKey("symbol.id"), nullable=False)
+    from_symbol_id: Mapped[int | None] = mapped_column(ForeignKey("symbol.id"), nullable=True)
     to_symbol_id: Mapped[int | None] = mapped_column(ForeignKey("symbol.id"), nullable=True)
     to_name: Mapped[str] = mapped_column(String(200), nullable=False)
     kind: Mapped[ReferenceKind] = mapped_column(Enum(ReferenceKind), nullable=False)
@@ -175,7 +175,7 @@ class ReferenceModel(Base):
     snippet: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    from_symbol: Mapped["SymbolModel"] = relationship(
+    from_symbol: Mapped["SymbolModel | None"] = relationship(
         foreign_keys=[from_symbol_id],
         back_populates="outgoing_refs",
     )

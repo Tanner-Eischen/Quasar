@@ -1,0 +1,27 @@
+LegacyLens Week 3 Quick Reference
+
+Current Status (Week 2 Complete):
+- RAG working, 100% embeddings, 1,163 symbols, 1,054 references
+- Symbol linking 1.8% is CORRECT for Fortran (not a bug)
+
+Week 3 Goal: Build 2D Konva proto-star graph (deployable)
+Week 4 Option: Upgrade to 2.5D (6-8 hours)
+
+Timeline:
+Day 16 - Backend API (6-8h)
+Day 17 - React + file nodes (8h)
+Day 18 - Symbol expansion (6h)
+Day 19 - Edges + RAG link (6h)
+Day 20-21 - Polish (10h)
+Day 22 - Demo video (4h)
+
+CollabCanvas Reuse: 70%
+- ClusterNodeObject -> FileNodeObject
+- cluster-layout -> symbol-layout
+- ConnectorObject -> CallEdgeObject
+- BoardCanvas -> GraphCanvas
+- globals.css -> graph.css
+
+Files Ready:
+- graph_api_implementation.py (backend)
+- week3_frontend_plan.md (detailed steps)

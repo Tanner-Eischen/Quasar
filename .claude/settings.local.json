@@ -3,7 +3,17 @@
     "allow": [
       "Bash(python:*)",
       "Bash(pip install:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(pip:*)",
+      "Bash(export:*)",
+      "Bash(PYTHONPATH=\"$PWD/src\" python:*)",
+      "Bash(netstat:*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(streamlit run:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

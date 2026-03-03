@@ -18,12 +18,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from legacylens.chunking import FortranChunker
 from legacylens.core.config import get_settings
-from legacylens.core.schemas import CorpusStatus
+from legacylens.core.schemas import ChunkType, CorpusStatus, ReferenceKind, SymbolKind
 from legacylens.db import (
     ChunkRepository,
     CorpusRepository,
     EmbeddingRepository,
     FileRepository,
+    ReferenceRepository,
+    SymbolRepository,
     get_session_factory,
     init_db,
 )
@@ -114,6 +116,8 @@ async def ingest_corpus(
         chunk_repo = ChunkRepository(session)
 
         all_chunks_data = []
+        all_results = []  # Store all ChunkerResults for later use
+        file_id_map = {}  # path -> file_id
         files_created = 0
         chunks_created = 0
 
@@ -124,6 +128,9 @@ async def ingest_corpus(
             for result in results:
                 if not result.chunks:
                     continue
+
+                # Store result for later symbol/reference extraction
+                all_results.append(result)
 
                 # Get relative path from corpus root
                 try:
@@ -139,6 +146,7 @@ async def ingest_corpus(
                     line_count=result.total_lines,
                     hash=file_hash,
                 )
+                file_id_map[rel_path] = file_record.id
                 files_created += 1
 
                 # Create chunk records
@@ -166,6 +174,127 @@ async def ingest_corpus(
 
         await session.commit()
         logger.info(f"Created {files_created} files, {chunks_created} chunks")
+
+        # Extract and store symbols and references
+        logger.info("Extracting symbols and references...")
+        symbol_repo = SymbolRepository(session)
+        reference_repo = ReferenceRepository(session)
+
+        symbols_created = 0
+        references_created = 0
+
+        # Use stored results for symbol extraction
+        for result in all_results:
+            if not result.chunks:
+                continue
+
+            try:
+                rel_path = str(result.filepath.relative_to(corpus_path))
+            except ValueError:
+                rel_path = str(result.filepath.name)
+
+            file_id = file_id_map.get(rel_path)
+            if not file_id:
+                continue
+
+            # Extract symbols from chunks (SUBROUTINE, FUNCTION, etc.)
+            for chunk in result.chunks:
+                if chunk.chunk_type in [ChunkType.SUBROUTINE, ChunkType.FUNCTION, ChunkType.PROGRAM, ChunkType.MODULE]:
+                    await symbol_repo.create(
+                        corpus_id=corpus.id,
+                        name=chunk.name,
+                        kind=SymbolKind(chunk.chunk_type.value),
+                        file_id=file_id,
+                        start_line=chunk.span.start_line,
+                        end_line=chunk.span.end_line,
+                        signature=chunk.name,  # TODO: Extract full signature
+                    )
+                    symbols_created += 1
+
+            # Extract COMMON blocks as symbols
+            for common in result.common_blocks:
+                await symbol_repo.create(
+                    corpus_id=corpus.id,
+                    name=common.name,
+                    kind=SymbolKind.COMMON,
+                    file_id=file_id,
+                    start_line=common.start_line,
+                    end_line=common.end_line,
+                    signature=common.signature,
+                )
+                symbols_created += 1
+
+        await session.commit()
+        logger.info(f"Created {symbols_created} symbols")
+
+        # Now extract references (CALL and INCLUDE statements)
+        logger.info("Extracting references...")
+
+        # Build a lookup of symbols by name
+        all_symbols = await symbol_repo.list_by_corpus(corpus.id, limit=10000)
+        symbol_by_name: dict[str, list] = {}
+        for sym in all_symbols:
+            name_lower = sym.name.lower()
+            if name_lower not in symbol_by_name:
+                symbol_by_name[name_lower] = []
+            symbol_by_name[name_lower].append(sym)
+
+        # Use stored results for reference extraction
+        for result in all_results:
+            if not result.chunks:
+                continue
+
+            try:
+                rel_path = str(result.filepath.relative_to(corpus_path))
+            except ValueError:
+                rel_path = str(result.filepath.name)
+
+            file_id = file_id_map.get(rel_path)
+            if not file_id:
+                continue
+
+            # Extract CALL references
+            for line_num, callee_name, args in result.calls:
+                # Find the symbol this call is within (optional)
+                caller_symbol = await symbol_repo.find_at_line(file_id, line_num)
+                from_symbol_id = caller_symbol.id if caller_symbol else None
+
+                # Find the callee symbol (may not exist in corpus)
+                callee_symbols = symbol_by_name.get(callee_name.lower(), [])
+                to_symbol_id = callee_symbols[0].id if callee_symbols else None
+
+                snippet = f"CALL {callee_name}({args})" if args else f"CALL {callee_name}"
+
+                await reference_repo.create(
+                    from_symbol_id=from_symbol_id,
+                    to_symbol_id=to_symbol_id,
+                    to_name=callee_name,
+                    kind=ReferenceKind.CALL,
+                    file_id=file_id,
+                    line=line_num,
+                    snippet=snippet,
+                )
+                references_created += 1
+
+            # Extract INCLUDE references
+            for line_num, include_path in result.includes:
+                # Find the symbol this include is within (optional)
+                container_symbol = await symbol_repo.find_at_line(file_id, line_num)
+                from_symbol_id = container_symbol.id if container_symbol else None
+
+                await reference_repo.create(
+                    from_symbol_id=from_symbol_id,
+                    to_symbol_id=None,  # INCLUDEs don't have a target symbol
+                    to_name=include_path,
+                    kind=ReferenceKind.INCLUDE,
+                    file_id=file_id,
+                    line=line_num,
+                    snippet=f"INCLUDE '{include_path}'",
+                )
+                references_created += 1
+
+        await session.commit()
+        logger.info(f"Created {references_created} references")
 
         # Generate embeddings
         logger.info("Generating embeddings...")
